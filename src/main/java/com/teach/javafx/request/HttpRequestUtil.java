@@ -21,7 +21,7 @@ import java.util.Map;
 public class HttpRequestUtil {
     private static final Gson gson = new Gson();
     private static final HttpClient client = HttpClient.newHttpClient();
-    public static String serverUrl = "http://localhost:22222";
+    public static String serverUrl = "http://localhost:22223";
 //    public static String serverUrl = "http://202.194.7.29:22222";
 
     /**
@@ -77,7 +77,7 @@ public class HttpRequestUtil {
                 HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
                 System.out.println("url=" + url +"    response.statusCode="+response.statusCode());
                 if (response.statusCode() == 200) {
-                    //                System.out.println(response.body());
+//                                    System.out.println(response.body());
                     return gson.fromJson(response.body(), DataResponse.class);
                 }
             } catch (IOException | InterruptedException e) {
