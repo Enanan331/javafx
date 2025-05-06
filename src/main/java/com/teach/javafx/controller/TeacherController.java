@@ -10,6 +10,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import com.teach.javafx.request.DataRequest;
@@ -92,6 +93,8 @@ public class TeacherController extends ToolController {
 
     @FXML
     private TextField numNameTextField;  //查询 姓名工号输入域
+    @FXML
+    private VBox showVBox;
 
     private Integer personId = null;  //当前编辑修改的教师的主键
 
@@ -147,6 +150,8 @@ public class TeacherController extends ToolController {
 
         genderComboBox.getItems().addAll(genderList);
         birthdayPick.setConverter(new LocalDateStringConverter("yyyy-MM-dd"));
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 
     /**
@@ -202,6 +207,8 @@ public class TeacherController extends ToolController {
 
     public void onTableRowSelect(ListChangeListener.Change<? extends Integer> change) {
         changeTeacherInfo();
+        showVBox.setVisible(true);
+        showVBox.setManaged(true);
     }
 
     /**
@@ -225,6 +232,8 @@ public class TeacherController extends ToolController {
     @FXML
     protected void onAddButtonClick() {
         clearPanel();
+        showVBox.setVisible(true);
+        showVBox.setManaged(true);
     }
 
     /**
@@ -253,6 +262,8 @@ public class TeacherController extends ToolController {
                 MessageDialog.showDialog(res.getMsg());
             }
         }
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 
     /**
@@ -288,6 +299,8 @@ public class TeacherController extends ToolController {
         } else {
             MessageDialog.showDialog(res.getMsg());
         }
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 
     /**

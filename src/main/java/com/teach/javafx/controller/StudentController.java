@@ -4,12 +4,15 @@ import com.teach.javafx.MainApplication;
 import com.teach.javafx.controller.base.LocalDateStringConverter;
 import com.teach.javafx.controller.base.ToolController;
 import com.teach.javafx.request.*;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import com.teach.javafx.request.DataRequest;
@@ -27,6 +30,7 @@ import javafx.stage.FileChooser;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -92,6 +96,8 @@ public class StudentController extends ToolController {
 
     @FXML
     private TextField numNameTextField;  //查询 姓名学号输入域
+    @FXML
+    private VBox showVBox;
 
     private Integer personId = null;  //当前编辑修改的学生的主键
 
@@ -147,6 +153,8 @@ public class StudentController extends ToolController {
 
         genderComboBox.getItems().addAll(genderList);
         birthdayPick.setConverter(new LocalDateStringConverter("yyyy-MM-dd"));
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 
     /**
@@ -202,6 +210,8 @@ public class StudentController extends ToolController {
 
     public void onTableRowSelect(ListChangeListener.Change<? extends Integer> change) {
         changeStudentInfo();
+        showVBox.setVisible(true);
+        showVBox.setManaged(true);
     }
 
     /**
@@ -225,6 +235,8 @@ public class StudentController extends ToolController {
      */
     @FXML
     protected void onAddButtonClick() {
+        showVBox.setVisible(true);
+        showVBox.setManaged(true);
         clearPanel();
     }
 
@@ -254,6 +266,8 @@ public class StudentController extends ToolController {
                 MessageDialog.showDialog(res.getMsg());
             }
         }
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 
     /**
@@ -289,6 +303,8 @@ public class StudentController extends ToolController {
         } else {
             MessageDialog.showDialog(res.getMsg());
         }
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 
     /**
@@ -352,69 +368,22 @@ public class StudentController extends ToolController {
     }
 
     @FXML
-    protected void onFamilyButtonClick() {
-        DataRequest req = new DataRequest();
-        req.add("personId", personId);
-        DataResponse res = HttpRequestUtil.request("/api/student/getFamilyMemberList", req);
-        if (res.getCode() != 0) {
-            MessageDialog.showDialog(res.getMsg());
-            return;
-        }
-        List<Map> familyList = (List<Map>) res.getData();
-        ObservableList<Map> oList = FXCollections.observableArrayList(familyList);
-        Scene scene = null, pScene = null;
-        Stage stage;
-        stage = new Stage();
-        TableView<Map> table = new TableView<>(oList);
-        table.setEditable(true);
-        TableColumn<Map, String> relationColumn = new TableColumn<>("关系");
-        relationColumn.setCellValueFactory(new MapValueFactory("relation"));
-        relationColumn.setCellFactory(TextFieldTableCell.<Map>forTableColumn());
-        relationColumn.setOnEditCommit(event -> {
-            TableView tempTable = event.getTableView();
-            Map tempEntity = (Map) tempTable.getItems().get(event.getTablePosition().getRow());
-            tempEntity.put("relation",event.getNewValue());
-        });
-        table.getColumns().add(relationColumn);
-        TableColumn<Map, String> nameColumn = new TableColumn<>("姓名");
-        nameColumn.setCellValueFactory(new MapValueFactory<>("name"));
-        nameColumn.setCellFactory(TextFieldTableCell.<Map>forTableColumn());
-        table.getColumns().add(nameColumn);
-        TableColumn<Map, String> genderColumn = new TableColumn<>("性别");
-        genderColumn.setCellValueFactory(new MapValueFactory<>("gender"));
-        genderColumn.setCellFactory(TextFieldTableCell.<Map>forTableColumn());
-        table.getColumns().add(genderColumn);
-        TableColumn<Map, String> ageColumn = new TableColumn<>("年龄");
-        ageColumn.setCellValueFactory(new MapValueFactory<>("age"));
-        ageColumn.setCellFactory(TextFieldTableCell.<Map>forTableColumn());
-        table.getColumns().add(ageColumn);
-        TableColumn<Map, String> unitColumn = new TableColumn<>("单位");
-        unitColumn.setCellValueFactory(new MapValueFactory<>("unit"));
-        unitColumn.setCellFactory(TextFieldTableCell.<Map>forTableColumn());
-        table.getColumns().add(unitColumn);
-        BorderPane root = new BorderPane();
-        FlowPane flowPane = new FlowPane();
-        Button obButton = new Button("确定");
-        obButton.setOnAction(event -> {
-            for(Map map: table.getItems()) {
-                System.out.println("map:"+map);
-            }
-            stage.close();
-        });
-        flowPane.getChildren().add(obButton);
-        root.setCenter(table);
-        root.setBottom(flowPane);
-        scene = new Scene(root, 260, 140);
-        stage.initOwner(MainApplication.getMainStage());
-        stage.initModality(Modality.NONE);
-        stage.setAlwaysOnTop(true);
+    protected void onFamilyButtonClick() throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/teach/javafx/family-member-panel.fxml"));
+        Parent root = loader.load();
+        Stage stage = new Stage();
+        stage.setWidth(1200);
+        stage.setHeight(900);
+        stage.setResizable(false);
+        stage.setTitle("familyMember");
+        Scene scene = new Scene(root,1800,1200);
         stage.setScene(scene);
-        stage.setTitle("成绩录入对话框！");
-        stage.setOnCloseRequest(event -> {
-            MainApplication.setCanClose(true);
-        });
+        stage.initModality(Modality.APPLICATION_MODAL);
+        FamilyMemberController familyMemberController = loader.getController();
+        familyMemberController.initialize(personId);
         stage.showAndWait();
     }
+
     public void displayPhoto(){
         DataRequest req = new DataRequest();
         req.add("fileName", "photo/" + personId + ".jpg");  //个人照片显示
