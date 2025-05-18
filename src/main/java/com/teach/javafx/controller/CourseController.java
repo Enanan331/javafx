@@ -1,7 +1,12 @@
 package com.teach.javafx.controller;
 
+import com.teach.javafx.controller.base.MessageDialog;
+import com.teach.javafx.util.CommonMethod;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.ListChangeListener;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.MapValueFactory;
 import com.teach.javafx.request.HttpRequestUtil;
 import javafx.collections.FXCollections;
@@ -13,10 +18,9 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.FlowPane;
 import com.teach.javafx.request.DataRequest;
 import com.teach.javafx.request.DataResponse;
+import javafx.scene.layout.VBox;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * CourseController 登录交互控制类 对应 course-panel.fxml
@@ -35,7 +39,31 @@ public class CourseController {
     @FXML
     private TableColumn<Map,String> preCourseColumn;
     @FXML
-    private TableColumn<Map,FlowPane> operateColumn;
+    private TableColumn<Map,String> selectNumColumn;
+    @FXML
+    private TableColumn<Map,String> attdenceNumColumn;
+    @FXML
+    private TableColumn<Map,String> textbooksColumn;
+
+    @FXML
+    private TextField numField;
+    @FXML
+    private TextField nameField;
+/*    @FXML
+    private TextField preCourseField;
+    @FXML
+    private TextField creditField;
+    @FXML
+    private TextField selectNumField;
+    @FXML
+    private TextField attdenceNumField;
+    @FXML
+    private TextField textbooksField;
+*/
+    @FXML
+    private VBox showVBox;
+
+    private Integer courseId=null;
 
     private List<Map<String,Object>> courseList = new ArrayList<>();  // 学生信息列表数据
     private final ObservableList<Map<String,Object>> observableList= FXCollections.observableArrayList();  // TableView渲染列表
@@ -52,46 +80,93 @@ public class CourseController {
     }
 
     private void setTableViewData() {
-       observableList.clear();
-       Map<String,Object> map;
-        FlowPane flowPane;
-        Button saveButton,deleteButton;
-            for (int j = 0; j < courseList.size(); j++) {
-                map = courseList.get(j);
-                flowPane = new FlowPane();
-                flowPane.setHgap(10);
-                flowPane.setAlignment(Pos.CENTER);
-                saveButton = new Button("修改保存");
-                saveButton.setId("save"+j);
-                saveButton.setOnAction(e->{
-                    saveItem(((Button)e.getSource()).getId());
-                });
-                deleteButton = new Button("删除");
-                deleteButton.setId("delete"+j);
-                deleteButton.setOnAction(e->{
-                    deleteItem(((Button)e.getSource()).getId());
-                });
-                flowPane.getChildren().addAll(saveButton,deleteButton);
-                map.put("operate",flowPane);
-                observableList.addAll(FXCollections.observableArrayList(map));
+        observableList.clear();
+        for (int j = 0; j < courseList.size(); j++) {
+            observableList.addAll(FXCollections.observableArrayList(courseList.get(j)));
+        }
+        dataTableView.setItems(observableList);
+    }
+    @FXML
+    protected void onSaveButtonClick(){
+        if(numField.getText().isEmpty()){
+            MessageDialog.showDialog(("wrong(课序号为空)"));
+            return;
+        }
+        Map<String,Object> form=new HashMap<>();
+        form.put("num",numField.getText());
+        form.put("name",nameField.getText());
+        DataRequest req =new DataRequest();
+        req.add("form",form);
+        DataResponse res = HttpRequestUtil.request("/api/course/courseSave",req);
+        if(res.getCode()== 0) {
+            MessageDialog.showDialog(("提交成功"));
+            onQueryButtonClick();
+        }else{
+            MessageDialog.showDialog((res.getMsg()));
+        }
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
+    }
+    public void clearPanel() {
+        courseId = null;
+        numField.setText("");
+        nameField.setText("");
+    }
+    @FXML
+    protected void onAddButtonClick() {
+        showVBox.setVisible(true);
+        showVBox.setManaged(true);
+        clearPanel();
+    }
+    protected void changeCourseInfo(){
+        Map<String,Object> form = dataTableView.getSelectionModel().getSelectedItem();
+        if(form == null){
+            clearPanel();
+            return;
+        }
+        courseId= CommonMethod.getInteger(form,"courseId");
+        DataRequest req =new DataRequest();
+        req.add("courseId",courseId);
+        DataResponse res = HttpRequestUtil.request("/api/course/getCourseInfo",req);
+        if(res.getCode()!= 0){
+            MessageDialog.showDialog(res.getMsg());
+            return;
+        }
+        form=(Map<String,Object>)res.getData();
+        numField.setText(CommonMethod.getString(form,"num"));
+        nameField.setText(CommonMethod.getString(form,"name"));
+        /*creditField.setText(CommonMethod.getString(form,"credit"));
+        preCourseField.setText(CommonMethod.getString(form,"preCourse"));
+        selectNumField.setText(CommonMethod.getString(form,"selectNum"));
+        attdenceNumField.setText(CommonMethod.getString(form,"attdenceNum"));
+        textbooksField.setText(CommonMethod.getString(form,"textbooks"));
+    */}
+    @FXML
+    protected void onDeleteButtonClick() {
+        Map form = dataTableView.getSelectionModel().getSelectedItem();
+        if (form == null) {
+            MessageDialog.showDialog("没有选择，不能删除");
+            return;
+        }
+        int ret = MessageDialog.choiceDialog("确认要删除吗?");
+        if (ret != MessageDialog.CHOICE_YES) {
+            return;
+        }
+        courseId = CommonMethod.getInteger(form, "courseId");
+        DataRequest req = new DataRequest();
+        req.add("courseId", courseId);
+        DataResponse res = HttpRequestUtil.request("/api/course/courseDelete", req);
+        if(res!= null) {
+            if (res.getCode() == 0) {
+                MessageDialog.showDialog("删除成功！");
+                onQueryButtonClick();
+            } else {
+                MessageDialog.showDialog(res.getMsg());
             }
-            dataTableView.setItems(observableList);
+        }
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
-    public void saveItem(String name){
-        if(name == null)
-            return;
-        int j = Integer.parseInt(name.substring(4));
-        Map<String,Object> data = courseList.get(j);
-        System.out.println(data);
-    }
-    public void deleteItem(String name){
-        if(name == null)
-            return;
-        int j = Integer.parseInt(name.substring(5));
-        Map<String,Object> data = courseList.get(j);
-        System.out.println(data);
-    }
-
     @FXML
     public void initialize() {
         numColumn.setCellValueFactory(new MapValueFactory<>("num"));
@@ -118,9 +193,40 @@ public class CourseController {
             Map<String, Object> map = event.getRowValue();
             map.put("preCourse", event.getNewValue());
         });
-        operateColumn.setCellValueFactory(new MapValueFactory<>("operate"));
+        selectNumColumn.setCellValueFactory(new MapValueFactory<>("selectNum"));
+        selectNumColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        selectNumColumn.setOnEditCommit(event -> {
+            Map<String, Object> map = event.getRowValue();
+            map.put("selectNum", event.getNewValue());
+        });
+        attdenceNumColumn.setCellValueFactory(new MapValueFactory<>("attdenceNum"));
+        attdenceNumColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        attdenceNumColumn.setOnEditCommit(event ->{
+            Map<String, Object> map = event.getRowValue();
+            map.put("attdenceNum", event.getNewValue());
+        });
+        textbooksColumn.setCellValueFactory(cellData -> {
+            List<String> textbooks = (List<String>) cellData.getValue().get("textbooks");
+            // 将 List 转为逗号分隔的字符串显示
+            String textbooksStr = String.join(", ", textbooks);
+            return new SimpleStringProperty(textbooksStr);
+        });
+
+        textbooksColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        textbooksColumn.setOnEditCommit(event -> {
+            Map<String, Object> map = event.getRowValue();
+            // 将用户输入的新字符串按逗号分割，存回 List
+            String newValue = event.getNewValue();
+            List<String> newTextbooks = Arrays.asList(newValue.split(",\\s*"));
+            map.put("textbooks", newTextbooks);
+        });
         dataTableView.setEditable(true);
+        TableView.TableViewSelectionModel<Map<String,Object>> tsm = dataTableView.getSelectionModel();
+        ObservableList<Integer> list = tsm.getSelectedIndices();
         onQueryButtonClick();
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 
 
