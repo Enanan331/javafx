@@ -61,6 +61,8 @@ public class CourseController {
     private TextField textbooksField;
 */
     @FXML
+    private TextField numNameTextField;
+    @FXML
     private VBox showVBox;
 
     private Integer courseId=null;
@@ -70,8 +72,10 @@ public class CourseController {
 
     @FXML
     private void onQueryButtonClick(){
+        String numName = numNameTextField.getText();
         DataResponse res;
         DataRequest req =new DataRequest();
+        req.add("numName", numName);
         res = HttpRequestUtil.request("/api/course/getCourseList",req); //从后台获取所有学生信息列表集合
         if(res != null && res.getCode()== 0) {
             courseList = (List<Map<String, Object>>) res.getData();
