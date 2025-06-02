@@ -1,19 +1,17 @@
 package com.teach.javafx.controller;
 
 import com.teach.javafx.controller.base.MessageDialog;
+import com.teach.javafx.request.OptionItem;
 import com.teach.javafx.util.CommonMethod;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.MapValueFactory;
 import com.teach.javafx.request.HttpRequestUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.FlowPane;
 import com.teach.javafx.request.DataRequest;
@@ -64,15 +62,20 @@ public class CourseController {
     private TextField numNameTextField;
     @FXML
     private VBox showVBox;
+    @FXML
+    private ComboBox<OptionItem> courseComboBox;
 
     private Integer courseId=null;
-
+    private List<OptionItem> courseName=new ArrayList<>();
     private List<Map<String,Object>> courseList = new ArrayList<>();  // 学生信息列表数据
     private final ObservableList<Map<String,Object>> observableList= FXCollections.observableArrayList();  // TableView渲染列表
 
     @FXML
     private void onQueryButtonClick(){
         String numName = numNameTextField.getText();
+        courseComboBox.setValue(null);
+        OptionItem op;
+        op=courseComboBox.getSelectionModel().getSelectedItem();
         DataResponse res;
         DataRequest req =new DataRequest();
         req.add("numName", numName);
@@ -96,7 +99,15 @@ public class CourseController {
             MessageDialog.showDialog(("wrong(课序号为空)"));
             return;
         }
+        if(nameField.getText().isEmpty()){
+            MessageDialog.showDialog(("wrong(课程名为空)"));
+            return;
+        }
         Map<String,Object> form=new HashMap<>();
+        OptionItem op=courseComboBox.getSelectionModel().getSelectedItem();
+        if(op!=null){
+            form.put("preCourseId", op.getValue());
+        }
         form.put("num",numField.getText());
         form.put("name",nameField.getText());
         DataRequest req =new DataRequest();
@@ -110,6 +121,23 @@ public class CourseController {
         }
         showVBox.setVisible(false);
         showVBox.setManaged(false);
+    }
+    public void editSave(Map<String, Object> map){
+        Map<String,Object> form=new HashMap<>();
+        form.put("num",map.get("num"));
+        form.put("credit",map.get("credit"));
+        form.put("selectNum",map.get("selectNum"));
+        form.put("attendenceNum",map.get("attendenceNum"));
+        form.put("textbooks",map.get("textbooks"));
+        DataRequest req =new DataRequest();
+        req.add("form",form);
+        DataResponse res = HttpRequestUtil.request("/api/course/courseEdit",req);
+        if(res.getCode()== 0) {
+            MessageDialog.showDialog(("修改成功"));
+            onQueryButtonClick();
+        }else{
+            MessageDialog.showDialog((res.getMsg()));
+        }
     }
     public void clearPanel() {
         courseId = null;
@@ -174,40 +202,28 @@ public class CourseController {
     @FXML
     public void initialize() {
         numColumn.setCellValueFactory(new MapValueFactory<>("num"));
-        numColumn.setCellFactory(TextFieldTableCell.forTableColumn());
-        numColumn.setOnEditCommit(event -> {
-            Map<String,Object> map = event.getRowValue();
-            map.put("num", event.getNewValue());
-        });
         nameColumn.setCellValueFactory(new MapValueFactory<>("name"));
-        nameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
-        nameColumn.setOnEditCommit(event -> {
-            Map<String, Object> map = event.getRowValue();
-            map.put("name", event.getNewValue());
-        });
         creditColumn.setCellValueFactory(new MapValueFactory<>("credit"));
         creditColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         creditColumn.setOnEditCommit(event -> {
             Map<String, Object> map = event.getRowValue();
             map.put("credit", event.getNewValue());
+            editSave(map);
         });
         preCourseColumn.setCellValueFactory(new MapValueFactory<>("preCourse"));
-        preCourseColumn.setCellFactory(TextFieldTableCell.forTableColumn());
-        preCourseColumn.setOnEditCommit(event -> {
-            Map<String, Object> map = event.getRowValue();
-            map.put("preCourse", event.getNewValue());
-        });
         selectNumColumn.setCellValueFactory(new MapValueFactory<>("selectNum"));
         selectNumColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         selectNumColumn.setOnEditCommit(event -> {
             Map<String, Object> map = event.getRowValue();
             map.put("selectNum", event.getNewValue());
+            editSave(map);
         });
         attdenceNumColumn.setCellValueFactory(new MapValueFactory<>("attdenceNum"));
         attdenceNumColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         attdenceNumColumn.setOnEditCommit(event ->{
             Map<String, Object> map = event.getRowValue();
             map.put("attdenceNum", event.getNewValue());
+            editSave(map);
         });
         textbooksColumn.setCellValueFactory(cellData -> {
             List<String> textbooks = (List<String>) cellData.getValue().get("textbooks");
@@ -224,10 +240,16 @@ public class CourseController {
             String newValue = event.getNewValue();
             List<String> newTextbooks = Arrays.asList(newValue.split(",\\s*"));
             map.put("textbooks", newTextbooks);
+            editSave(map);
         });
         dataTableView.setEditable(true);
         TableView.TableViewSelectionModel<Map<String,Object>> tsm = dataTableView.getSelectionModel();
         ObservableList<Integer> list = tsm.getSelectedIndices();
+        DataRequest req =new DataRequest();
+        courseName = HttpRequestUtil.requestOptionItemList("/api/course/getCourseItemOptionList",req);
+        OptionItem item=new OptionItem(null,"0","请选择");
+        courseComboBox.getItems().add(item);
+        courseComboBox.getItems().addAll(courseName);
         onQueryButtonClick();
         showVBox.setVisible(false);
         showVBox.setManaged(false);
