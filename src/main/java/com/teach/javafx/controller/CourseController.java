@@ -39,7 +39,7 @@ public class CourseController {
     @FXML
     private TableColumn<Map,String> selectNumColumn;
     @FXML
-    private TableColumn<Map,String> attdenceNumColumn;
+    private TableColumn<Map,String> attendenceNumColumn;
     @FXML
     private TableColumn<Map,String> textbooksColumn;
 
@@ -218,11 +218,11 @@ public class CourseController {
             map.put("selectNum", event.getNewValue());
             editSave(map);
         });
-        attdenceNumColumn.setCellValueFactory(new MapValueFactory<>("attdenceNum"));
-        attdenceNumColumn.setCellFactory(TextFieldTableCell.forTableColumn());
-        attdenceNumColumn.setOnEditCommit(event ->{
+        attendenceNumColumn.setCellValueFactory(new MapValueFactory<>("attendenceNum"));
+        attendenceNumColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        attendenceNumColumn.setOnEditCommit(event ->{
             Map<String, Object> map = event.getRowValue();
-            map.put("attdenceNum", event.getNewValue());
+            map.put("attendenceNum", event.getNewValue());
             editSave(map);
         });
         textbooksColumn.setCellValueFactory(cellData -> {

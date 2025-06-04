@@ -41,7 +41,7 @@
                         <TableColumn fx:id="preCourseColumn" prefWidth="120.0" text="前序课" />
                         <TableColumn fx:id="creditColumn" prefWidth="60.0" text="学分" />
                         <TableColumn fx:id="selectNumColumn" prefWidth="75.0" text="选课人数" />
-                        <TableColumn fx:id="attdenceNumColumn" prefWidth="75.0" text="考勤次数" />
+                        <TableColumn fx:id="attendenceNumColumn" prefWidth="75.0" text="考勤次数" />
                         <TableColumn fx:id="textbooksColumn" prefWidth="152.66666666666663" text="课本" />
                     </columns>
                 </TableView>
