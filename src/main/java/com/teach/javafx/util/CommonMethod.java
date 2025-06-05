@@ -188,7 +188,7 @@ public class CommonMethod {
             return "";
         for (OptionItem optionItem : itemList) {
             if (optionItem.getValue().equals(value))
-                return optionItem.getTitle();
+                return optionItem.getLabel(); // 使用getLabel()而不是getTitle()
         }
         return "";
     }

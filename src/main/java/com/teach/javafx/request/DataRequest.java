@@ -1,6 +1,7 @@
 package com.teach.javafx.request;
 
 import com.teach.javafx.util.DateTimeTool;
+import com.google.gson.Gson;
 
 import java.util.*;
 
@@ -140,6 +141,14 @@ public class DataRequest {
             cPage = 0;
         return cPage;
 
+    }
+
+    /**
+     * 将请求数据转换为JSON字符串
+     * @return JSON字符串
+     */
+    public String toJson() {
+        return new Gson().toJson(this);
     }
 
 }

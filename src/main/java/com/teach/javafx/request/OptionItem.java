@@ -1,33 +1,51 @@
 package com.teach.javafx.request;
 
-import com.teach.javafx.util.CommonMethod;
-
 import java.util.Map;
 
 /**
- * OptionItem 选项数据类
- * Integer id  数据项id
- * String value 数据项值
- * String label 数据值标题
+ * 选项项
  */
 public class OptionItem {
     private Integer id;
     private String value;
+    private String label;
     private String title;
 
-    public OptionItem(){
-
+    public OptionItem() {
     }
-    public OptionItem(Integer id, String value, String title){
+
+    public OptionItem(Integer id, String value, String label) {
         this.id = id;
         this.value = value;
-        this.title = title;
+        this.label = label;
+        this.title = label; // 设置title与label相同
     }
-    public OptionItem(Map<String,Object> map){
-        this.id = CommonMethod.getInteger(map,"id");
-        this.value = CommonMethod.getString(map,"value");
-        this.title = CommonMethod.getString(map,"title");
+
+    public OptionItem(Map<String, Object> map) {
+        if (map != null) {
+            // 使用安全的类型转换
+            Object idObj = map.get("id");
+            if (idObj instanceof Integer) {
+                this.id = (Integer) idObj;
+            } else if (idObj != null) {
+                try {
+                    this.id = Integer.parseInt(idObj.toString());
+                } catch (NumberFormatException e) {
+                    this.id = null;
+                }
+            }
+
+            Object valueObj = map.get("value");
+            this.value = valueObj != null ? valueObj.toString() : null;
+
+            Object labelObj = map.get("label");
+            this.label = labelObj != null ? labelObj.toString() : null;
+
+            Object titleObj = map.get("title");
+            this.title = titleObj != null ? titleObj.toString() : this.label;
+        }
     }
+
     public Integer getId() {
         return id;
     }
@@ -44,15 +62,24 @@ public class OptionItem {
         this.value = value;
     }
 
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
     public String getTitle() {
-        return title;
+        return title != null ? title : label; // 如果title为空，返回label
     }
 
     public void setTitle(String title) {
         this.title = title;
     }
 
-    public String toString(){
-        return title;
+    @Override
+    public String toString() {
+        return label != null ? label : (title != null ? title : "");
     }
 }

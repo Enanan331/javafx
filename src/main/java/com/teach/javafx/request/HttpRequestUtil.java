@@ -2,6 +2,8 @@ package com.teach.javafx.request;
 
 import com.teach.javafx.AppStore;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.JsonSyntaxException;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -136,29 +138,37 @@ public class HttpRequestUtil {
     }
 
     /**
-     *  List<OptionItem> requestOptionItemList(String url, DataRequest request) 获取OptionItemList对象
-     * @param url  Web请求的Url 对用后的 RequestMapping
-     * @param request 请求参数对象
-     * @return List<OptionItem> 返回后台返回数据
+     * 请求选项列表
+     * @param url 请求URL
+     * @param req 请求参数
+     * @return 选项列表
      */
-    public static List<OptionItem> requestOptionItemList(String url, DataRequest request){
-        HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(serverUrl + url))
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(request)))
-                .headers("Content-Type", "application/json")
-                .headers("Authorization", "Bearer "+AppStore.getJwt().getToken())
-                .build();
-        HttpClient client = HttpClient.newHttpClient();
+    public static List<OptionItem> requestOptionItemList(String url, DataRequest req) {
         try {
-            HttpResponse<String>  response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            if(response.statusCode() == 200) {
-                OptionItemList o = gson.fromJson(response.body(), OptionItemList.class);
-                return o.getItemList();
+            String json = post(url, req.toJson());
+            if (json == null) {
+                return null;
             }
-        } catch (IOException | InterruptedException e) {
+            
+            // 尝试解析为数组
+            try {
+                return new Gson().fromJson(json, new TypeToken<List<OptionItem>>(){}.getType());
+            } catch (JsonSyntaxException e) {
+                // 如果解析为数组失败，尝试解析为OptionItemList对象
+                try {
+                    OptionItemList itemList = new Gson().fromJson(json, OptionItemList.class);
+                    return itemList.getItemList();
+                } catch (JsonSyntaxException e2) {
+                    // 如果两种方式都失败，记录错误并返回空列表
+                    System.err.println("JSON解析错误: " + e2.getMessage());
+                    System.err.println("原始JSON: " + json);
+                    return new ArrayList<>();
+                }
+            }
+        } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
-        return null;
     }
 
     /**
@@ -253,6 +263,33 @@ public class HttpRequestUtil {
         return null;
     }
 
-
+    /**
+     * 发送POST请求并返回响应字符串
+     * @param url 请求URL
+     * @param jsonBody 请求体JSON字符串
+     * @return 响应字符串
+     */
+    private static String post(String url, String jsonBody) {
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(serverUrl + url))
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .headers("Content-Type", "application/json")
+                .headers("Authorization", "Bearer " + AppStore.getJwt().getToken())
+                .build();
+        
+        try {
+            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                return response.body();
+            } else {
+                System.err.println("HTTP错误: " + response.statusCode());
+                System.err.println("响应内容: " + response.body());
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
 
 }

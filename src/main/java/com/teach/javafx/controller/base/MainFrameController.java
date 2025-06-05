@@ -198,6 +198,36 @@ public class MainFrameController {
             }
         }
         
+        // 添加创新管理菜单到教务管理菜单下
+        boolean innovationMenuAdded = false;
+        for (Map m : mList) {
+            String title = (String)m.get("title");
+            if ("教务管理".equals(title)) {
+                List<Map> sList = (List<Map>)m.get("sList");
+                if (sList != null) {
+                    // 检查是否已存在创新管理菜单
+                    boolean exists = false;
+                    for (Map subMenu : sList) {
+                        if ("innovation-panel".equals((String)subMenu.get("name"))) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    
+                    // 如果不存在，则添加
+                    if (!exists) {
+                        Map<String, Object> innovationMenu = new HashMap<>();
+                        innovationMenu.put("name", "innovation-panel");
+                        innovationMenu.put("title", "创新管理");
+                        innovationMenu.put("sList", new ArrayList<>());
+                        sList.add(innovationMenu);
+                        innovationMenuAdded = true;
+                    }
+                }
+                break;
+            }
+        }
+        
         initMenuBar(mList);
         initMenuTree(mList);
         contentTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
@@ -253,10 +283,16 @@ public class MainFrameController {
             if(scene == null) {
                 FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource(name + ".fxml"));
                 try {
+                    // 检查资源是否存在
+                    if (fxmlLoader.getLocation() == null) {
+                        MessageDialog.showDialog("找不到资源文件: " + name + ".fxml");
+                        return;
+                    }
                     scene = new Scene(fxmlLoader.load(), 1024, 768);
                     sceneMap.put(name, scene);
                 } catch (IOException e) {
                     e.printStackTrace();
+                    MessageDialog.showDialog("加载资源文件失败: " + e.getMessage());
                     return;
                 }
                 c = fxmlLoader.getController();
