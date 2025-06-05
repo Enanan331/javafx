@@ -390,28 +390,46 @@ public class StudentController extends ToolController {
     }
 
     public void displayPhoto(){
+        // 确保personId不为空
+        if (personId == null) {
+            // 清空照片显示
+            photoImageView.setImage(null);
+            return;
+        }
+        
         DataRequest req = new DataRequest();
+        // 使用personId作为照片文件名的一部分，确保每个学生有唯一的照片
         req.add("fileName", "photo/" + personId + ".jpg");  //个人照片显示
         byte[] bytes = HttpRequestUtil.requestByteData("/api/base/getFileByteData", req);
         if (bytes != null) {
             ByteArrayInputStream in = new ByteArrayInputStream(bytes);
             Image img = new Image(in);
             photoImageView.setImage(img);
+        } else {
+            // 如果没有找到照片，显示默认照片或清空照片显示
+            photoImageView.setImage(null);
         }
-
     }
 
     @FXML
     public void onPhotoButtonClick(){
+        // 确保personId不为空
+        if (personId == null) {
+            MessageDialog.showDialog("请先选择或保存学生信息，再上传照片！");
+            return;
+        }
+        
         FileChooser fileDialog = new FileChooser();
         fileDialog.setTitle("图片上传");
-//        fileDialog.setInitialDirectory(new File("C:/"));
         fileDialog.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("JPG 文件", "*.jpg"));
         File file = fileDialog.showOpenDialog(null);
         if(file == null)
             return;
-        DataResponse res =HttpRequestUtil.uploadFile("/api/base/uploadPhoto",file.getPath(),"photo/" + personId + ".jpg");
+        
+        // 使用personId作为照片文件名的一部分，确保每个学生有唯一的照片
+        String photoPath = "photo/" + personId + ".jpg";
+        DataResponse res = HttpRequestUtil.uploadFile("/api/base/uploadPhoto", file.getPath(), photoPath);
         if(res.getCode() == 0) {
             MessageDialog.showDialog("上传成功！");
             displayPhoto();
