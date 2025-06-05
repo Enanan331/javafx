@@ -166,6 +166,9 @@ public class FamilyMemberController extends ToolController {
                 setTableViewData();
             }
         }
+        isAdd = false;
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 
     @FXML
@@ -174,6 +177,7 @@ public class FamilyMemberController extends ToolController {
         isAdd = true;
         showVBox.setVisible(true);
         showVBox.setManaged(true);
+        dataTableView.getSelectionModel().clearSelection();
     }
 
     @FXML
@@ -202,23 +206,52 @@ public class FamilyMemberController extends ToolController {
         showVBox.setVisible(false);
         showVBox.setManaged(false);
         refreshTableViewData();
+        dataTableView.getSelectionModel().clearSelection();
     }
 
     @FXML
     protected void onSaveButtonClick() {
+        // 姓名非空检验
         if (nameField.getText().isEmpty()) {
             MessageDialog.showDialog("家庭成员姓名不能为空！");
             return;
         }
+        // 姓名长度检验（根据 FamilyMember 类中 @Size(max=30)）
+        if (nameField.getText().length() > 30) {
+            MessageDialog.showDialog("家庭成员姓名长度不能超过 30！");
+            return;
+        }
+
+        // 关系非空检验
         if (relationField.getText().isEmpty()) {
             MessageDialog.showDialog("关系不能为空！");
             return;
         }
-        if(genderComboBox.getSelectionModel().getSelectedIndex() == -1) {
+        // 关系长度检验（根据 FamilyMember 类中 @Size(max=10)）
+        if (relationField.getText().length() > 10) {
+            MessageDialog.showDialog("关系长度不能超过 10！");
+            return;
+        }
+
+        // 性别非空检验
+        if (genderComboBox.getSelectionModel().getSelectedIndex() == -1) {
             MessageDialog.showDialog("性别不能为空！");
             return;
         }
-        Map<String,Object> form = new HashMap<>();
+
+        // 年龄长度检验（根据 FamilyMember 类中 @Size(max=3)）
+        if (!ageField.getText().isEmpty() && ageField.getText().length() > 3) {
+            MessageDialog.showDialog("年龄长度不能超过 3！");
+            return;
+        }
+
+        // 工作单位长度检验（根据 FamilyMember 类中 @Size(max=50)）
+        if (!unitField.getText().isEmpty() && unitField.getText().length() > 50) {
+            MessageDialog.showDialog("工作单位长度不能超过 50！");
+            return;
+        }
+
+        Map<String, Object> form = new HashMap<>();
         form.put("name", nameField.getText());
         form.put("personId", personId);
         form.put("relation", relationField.getText());
@@ -232,22 +265,19 @@ public class FamilyMemberController extends ToolController {
             req.add("form", form);
             res = HttpRequestUtil.request("/api/family_member/addFamilyMember", req);
             isAdd = false;
-        }
-        else {
+        } else {
             form.put("memberId", memberId);
             req.add("form", form);
             res = HttpRequestUtil.request("/api/family_member/editFamilyMember", req);
         }
-        if (res.getCode() == 0) {
-            MessageDialog.showDialog("保存成功！");
-//            onQueryButtonClick();
-
-        }
-        else {
-            MessageDialog.showDialog(res.getMsg());
-        }
         showVBox.setVisible(false);
         showVBox.setManaged(false);
         refreshTableViewData();
+        dataTableView.getSelectionModel().clearSelection();
+        if (res.getCode() == 0) {
+            MessageDialog.showDialog("保存成功！");
+        } else {
+            MessageDialog.showDialog(res.getMsg());
+        }
     }
 }

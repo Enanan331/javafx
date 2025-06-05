@@ -209,6 +209,7 @@ public class TeacherController extends ToolController {
         changeTeacherInfo();
         showVBox.setVisible(true);
         showVBox.setManaged(true);
+        dataTableView.getSelectionModel().clearSelection();
     }
 
     /**
@@ -224,6 +225,8 @@ public class TeacherController extends ToolController {
             teacherList = (ArrayList<Map>) res.getData();
             setTableViewData();
         }
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 
     /**
@@ -234,6 +237,7 @@ public class TeacherController extends ToolController {
         clearPanel();
         showVBox.setVisible(true);
         showVBox.setManaged(true);
+        dataTableView.getSelectionModel().clearSelection();
     }
 
     /**
@@ -264,6 +268,7 @@ public class TeacherController extends ToolController {
         }
         showVBox.setVisible(false);
         showVBox.setManaged(false);
+        dataTableView.getSelectionModel().clearSelection();
     }
 
     /**
@@ -301,6 +306,7 @@ public class TeacherController extends ToolController {
         }
         showVBox.setVisible(false);
         showVBox.setManaged(false);
+        dataTableView.getSelectionModel().clearSelection();
     }
 
     /**
