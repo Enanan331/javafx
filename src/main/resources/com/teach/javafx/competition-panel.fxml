@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.teach.javafx.controller.CompetitionController"
+            prefHeight="600.0" prefWidth="800.0">
+    <top>
+        <HBox spacing="10.0" alignment="CENTER_LEFT">
+            <padding>
+                <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
+            </padding>
+            <Label text="学号/姓名:"/>
+            <TextField fx:id="numNameTextField" prefWidth="200.0"/>
+            <Button text="查询" onAction="#onQueryButtonClick"/>
+            <Button text="添加" onAction="#onAddButtonClick"/>
+        </HBox>
+    </top>
+    <center>
+        <SplitPane dividerPositions="0.8">
+            <items>
+                <TableView fx:id="dataTableView" BorderPane.alignment="CENTER">
+                    <columns>
+                        <TableColumn fx:id="studentNumColumn" prefWidth="120.0" text="学号" />
+                        <TableColumn fx:id="studentNameColumn" prefWidth="120.0" text="学生姓名" />
+                        <TableColumn fx:id="subjectColumn" prefWidth="150.0" text="竞赛学科" />
+                        <TableColumn fx:id="resultColumn" prefWidth="150.0" text="竞赛成果" />
+                        <TableColumn fx:id="competitionTimeColumn" prefWidth="120.0" text="竞赛时间" />
+                    </columns>
+                </TableView>
+                <VBox fx:id="showVBox" visible="false" managed="false" spacing="10.0">
+                    <padding>
+                        <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
+                    </padding>
+                    <GridPane vgap="10.0" hgap="10.0">
+                        <Label text="学号:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <TextField fx:id="studentNumField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                        <Label text="学生姓名:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <TextField fx:id="studentNameField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                        <Label text="竞赛学科:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                        <TextField fx:id="subjectField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                        <Label text="竞赛成果:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                        <TextField fx:id="resultField" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                        <Label text="竞赛时间:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                        <TextField fx:id="competitionTimeField" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                    </GridPane>
+                    <HBox spacing="10.0" alignment="CENTER">
+                        <Button text="保存" onAction="#onSaveButtonClick"/>
+                        <Button text="删除" onAction="#onDeleteButtonClick"/>
+                    </HBox>
+                </VBox>
+            </items>
+        </SplitPane>
+    </center>
+</BorderPane>

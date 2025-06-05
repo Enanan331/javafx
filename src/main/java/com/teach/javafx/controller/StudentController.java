@@ -227,6 +227,8 @@ public class StudentController extends ToolController {
             studentList = (ArrayList<Map>) res.getData();
             setTableViewData();
         }
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 
 
@@ -238,6 +240,7 @@ public class StudentController extends ToolController {
         showVBox.setVisible(true);
         showVBox.setManaged(true);
         clearPanel();
+        dataTableView.getSelectionModel().clearSelection();
     }
 
     /**
@@ -268,6 +271,7 @@ public class StudentController extends ToolController {
         }
         showVBox.setVisible(false);
         showVBox.setManaged(false);
+        dataTableView.getSelectionModel().clearSelection();
     }
 
     /**
@@ -305,6 +309,7 @@ public class StudentController extends ToolController {
         }
         showVBox.setVisible(false);
         showVBox.setManaged(false);
+        dataTableView.getSelectionModel().clearSelection();
     }
 
     /**

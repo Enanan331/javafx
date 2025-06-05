@@ -18,6 +18,7 @@ import com.teach.javafx.request.DataResponse;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -163,15 +164,44 @@ public class MainFrameController {
     }
     @FXML
     public void initialize() {
-        handler =new ChangePanelHandler();
-        DataResponse res = HttpRequestUtil.request("/api/base/getMenuList",new DataRequest());
+        handler = new ChangePanelHandler();
+        DataResponse res = HttpRequestUtil.request("/api/base/getMenuList", new DataRequest());
         List<Map> mList = (List<Map>)res.getData();
+        
+        // 添加学科竞赛菜单到教务管理菜单下
+        boolean competitionMenuAdded = false;
+        for (Map m : mList) {
+            String title = (String)m.get("title");
+            if ("教务管理".equals(title)) {
+                List<Map> sList = (List<Map>)m.get("sList");
+                if (sList != null) {
+                    // 检查是否已存在学科竞赛菜单
+                    boolean exists = false;
+                    for (Map subMenu : sList) {
+                        if ("competition-panel".equals((String)subMenu.get("name"))) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    
+                    // 如果不存在，则添加
+                    if (!exists) {
+                        Map<String, Object> competitionMenu = new HashMap<>();
+                        competitionMenu.put("name", "competition-panel");
+                        competitionMenu.put("title", "学科竞赛");
+                        competitionMenu.put("sList", new ArrayList<>());
+                        sList.add(competitionMenu);
+                        competitionMenuAdded = true;
+                    }
+                }
+                break;
+            }
+        }
+        
         initMenuBar(mList);
         initMenuTree(mList);
         contentTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
         contentTabPane.setStyle("-fx-background-image: url('shanda1.jpg'); -fx-background-repeat: no-repeat; -fx-background-size: cover;");  //inline选择器
-
-
     }
 
 
