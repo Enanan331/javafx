@@ -209,7 +209,6 @@ public class TeacherController extends ToolController {
         changeTeacherInfo();
         showVBox.setVisible(true);
         showVBox.setManaged(true);
-        dataTableView.getSelectionModel().clearSelection();
     }
 
     /**
