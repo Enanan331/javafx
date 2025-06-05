@@ -176,5 +176,12 @@ public class CompetitionController {
                 showVBox.setManaged(true);
             }
         });
+        
+        // 初始化时加载所有数据
+        onQueryButtonClick();
+        
+        // 初始时隐藏编辑面板
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 }
