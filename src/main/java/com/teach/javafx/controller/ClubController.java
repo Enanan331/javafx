@@ -215,6 +215,10 @@ public class ClubController extends ToolController {
             }
         });
 
+        advisorComboBox.setOnMouseClicked(e -> {
+            loadAllTeachers(); // 点击时刷新教师数据
+        });
+
         // 确保教师下拉框使用最新数据
         advisorComboBox.getItems().setAll(FXCollections.observableArrayList(teacherList));
 
