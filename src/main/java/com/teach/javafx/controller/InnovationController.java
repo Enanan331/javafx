@@ -67,9 +67,6 @@ public class InnovationController extends ToolController {
         // 先配置教师下拉框显示格式
         configureTeacherComboBox();
         
-        // 然后加载教师选项
-        loadTeacherOptions();
-        
         // 设置表格选择监听器
         dataTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
@@ -154,7 +151,12 @@ public class InnovationController extends ToolController {
                 // 当场景变为可见时刷新数据
                 newScene.windowProperty().addListener((prop, oldWindow, newWindow) -> {
                     if (newWindow != null) {
-                        Platform.runLater(this::loadAllInnovationData);
+                        Platform.runLater(() -> {
+                            // 重新加载教师选项
+                            loadTeacherOptions();
+                            // 加载所有创新成果数据
+                            loadAllInnovationData();
+                        });
                     }
                 });
             }
@@ -489,6 +491,9 @@ public class InnovationController extends ToolController {
     // 实现ToolController的方法
     @Override
     public void doRefresh() {
+        // 重新加载教师选项
+        loadTeacherOptions();
+        // 然后刷新创新成果数据
         onQueryButtonClick();
     }
 
@@ -557,5 +562,11 @@ public class InnovationController extends ToolController {
             observableList.addAll(FXCollections.observableArrayList(innovationList.get(j)));
         }
         dataTableView.setItems(observableList);
+    }
+
+    // 添加一个新方法，用于在教师下拉框被点击时刷新选项
+    @FXML
+    private void onTeacherComboBoxClicked() {
+        loadTeacherOptions();
     }
 }
