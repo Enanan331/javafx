@@ -13,6 +13,10 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.MapValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import java.util.Optional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -250,6 +254,51 @@ public class InnovationController extends ToolController {
     protected void onCancelButtonClick() {
         showVBox.setVisible(false);
         showVBox.setManaged(false);
+    }
+    
+    @FXML
+    protected void onDeleteButtonClick() {
+        Map<String, Object> form = dataTableView.getSelectionModel().getSelectedItem();
+        if (form == null) {
+            MessageDialog.showDialog("没有选择，不能删除");
+            return;
+        }
+        
+        // 创建自定义的确认对话框，只有"是"和"否"按钮
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("确认删除");
+        alert.setHeaderText(null);
+        alert.setContentText("确认要删除该创新成果吗?");
+        
+        // 移除默认的"取消"按钮
+        ButtonType yesButton = new ButtonType("是", ButtonBar.ButtonData.YES);
+        ButtonType noButton = new ButtonType("否", ButtonBar.ButtonData.NO);
+        alert.getButtonTypes().setAll(yesButton, noButton);
+        
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == yesButton) {
+            // 用户点击了"是"按钮
+            Object innovationIdObj = form.get("innovationId");
+            Integer innovationId = null;
+            if (innovationIdObj instanceof Integer) {
+                innovationId = (Integer) innovationIdObj;
+            } else if (innovationIdObj instanceof String) {
+                innovationId = Integer.parseInt((String) innovationIdObj);
+            }
+            
+            DataRequest req = new DataRequest();
+            req.add("innovationId", innovationId);
+            DataResponse res = HttpRequestUtil.request("/api/innovation/innovationDelete", req);
+            if (res != null && res.getCode() == 0) {
+                MessageDialog.showDialog("删除成功！");
+                onQueryButtonClick();
+            } else if (res != null) {
+                MessageDialog.showDialog(res.getMsg());
+            }
+            
+            showVBox.setVisible(false);
+            showVBox.setManaged(false);
+        }
     }
     
     // 实现ToolController的方法
