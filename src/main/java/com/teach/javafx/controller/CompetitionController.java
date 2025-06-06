@@ -6,6 +6,7 @@ import com.teach.javafx.request.DataRequest;
 import com.teach.javafx.request.DataResponse;
 import com.teach.javafx.request.HttpRequestUtil;
 import com.teach.javafx.util.CommonMethod;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -163,12 +164,14 @@ public class CompetitionController {
 
     @FXML
     public void initialize() {
+        // 设置表格列的值工厂
         studentNumColumn.setCellValueFactory(new MapValueFactory<>("studentNum"));
         studentNameColumn.setCellValueFactory(new MapValueFactory<>("studentName"));
         subjectColumn.setCellValueFactory(new MapValueFactory<>("subject"));
         resultColumn.setCellValueFactory(new MapValueFactory<>("result"));
         competitionTimeColumn.setCellValueFactory(new MapValueFactory<>("competitionTime"));
 
+        // 设置表格行选择监听器
         dataTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
                 changeCompetitionInfo();
@@ -177,11 +180,45 @@ public class CompetitionController {
             }
         });
         
+        // 添加场景变化监听器
+        dataTableView.sceneProperty().addListener((observable, oldScene, newScene) -> {
+            if (newScene != null) {
+                // 当场景变为可见时刷新数据
+                newScene.windowProperty().addListener((prop, oldWindow, newWindow) -> {
+                    if (newWindow != null) {
+                        Platform.runLater(this::loadAllCompetitionData);
+                    }
+                });
+            }
+        });
+        
         // 初始化时加载所有数据
-        onQueryButtonClick();
+        loadAllCompetitionData();
         
         // 初始时隐藏编辑面板
         showVBox.setVisible(false);
         showVBox.setManaged(false);
+    }
+
+    /**
+     * 加载所有竞赛数据
+     */
+    private void loadAllCompetitionData() {
+        // 清空搜索框
+        numNameTextField.setText("");
+        
+        // 发送请求获取所有竞赛数据
+        DataRequest req = new DataRequest();
+        req.add("numName", ""); // 空字符串表示获取所有数据
+        DataResponse res = HttpRequestUtil.request("/api/competition/getCompetitionList", req);
+        if (res != null && res.getCode() == 0) {
+            competitionList = (List<Map<String, Object>>) res.getData();
+        }
+        setTableViewData();
+    }
+
+    // 添加一个公共方法，可以从外部调用来刷新数据
+    public void refreshData() {
+        Platform.runLater(this::loadAllCompetitionData);
     }
 }
