@@ -123,6 +123,7 @@ public class StudentController extends ToolController {
 
     @FXML
     public void initialize() {
+        // 确保每次初始化时创建新的ImageView实例
         photoImageView = new ImageView();
         photoImageView.setFitHeight(100);
         photoImageView.setFitWidth(100);
@@ -201,6 +202,10 @@ public class StudentController extends ToolController {
         emailField.setText(CommonMethod.getString(form, "email"));
         phoneField.setText(CommonMethod.getString(form, "phone"));
         addressField.setText(CommonMethod.getString(form, "address"));
+        
+        // 清除之前的照片
+        photoImageView.setImage(null);
+        // 然后显示新的照片
         displayPhoto();
     }
 
@@ -390,6 +395,8 @@ public class StudentController extends ToolController {
     }
 
     public void displayPhoto(){
+        if (personId == null) return;
+        
         DataRequest req = new DataRequest();
         req.add("fileName", "photo/" + personId + ".jpg");  //个人照片显示
         byte[] bytes = HttpRequestUtil.requestByteData("/api/base/getFileByteData", req);
@@ -397,27 +404,56 @@ public class StudentController extends ToolController {
             ByteArrayInputStream in = new ByteArrayInputStream(bytes);
             Image img = new Image(in);
             photoImageView.setImage(img);
+        } else {
+            // 如果没有照片，显示默认图片
+            photoImageView.setImage(null);
         }
-
     }
 
     @FXML
-    public void onPhotoButtonClick(){
+    public void onPhotoButtonClick() {
+        if (personId == null) {
+            MessageDialog.showDialog("请先选择一个学生！");
+            return;
+        }
+        
         FileChooser fileDialog = new FileChooser();
         fileDialog.setTitle("图片上传");
-//        fileDialog.setInitialDirectory(new File("C:/"));
         fileDialog.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("JPG 文件", "*.jpg"));
         File file = fileDialog.showOpenDialog(null);
-        if(file == null)
+        if (file == null)
             return;
-        DataResponse res =HttpRequestUtil.uploadFile("/api/base/uploadPhoto",file.getPath(),"photo/" + personId + ".jpg");
-        if(res.getCode() == 0) {
-            MessageDialog.showDialog("上传成功！");
-            displayPhoto();
+        
+        if (!file.exists() || !file.canRead()) {
+            MessageDialog.showDialog("无法读取选择的文件！");
+            return;
         }
-        else {
-            MessageDialog.showDialog(res.getMsg());
+        
+        if (file.length() > 5 * 1024 * 1024) { // 5MB限制
+            MessageDialog.showDialog("文件太大，请选择小于5MB的图片！");
+            return;
+        }
+        
+        // 添加时间戳防止缓存问题
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String remoteFile = "photo/" + personId + ".jpg?t=" + timestamp;
+        
+        try {
+            DataResponse res = HttpRequestUtil.uploadFile("/api/base/uploadPhoto", file.getPath(), remoteFile);
+            
+            if (res.getCode() == 0) {
+                MessageDialog.showDialog("上传成功！");
+                // 清除之前的照片
+                photoImageView.setImage(null);
+                // 显示新照片
+                displayPhoto();
+            } else {
+                MessageDialog.showDialog("上传失败: " + res.getMsg());
+            }
+        } catch (Exception e) {
+            MessageDialog.showDialog("上传过程中发生错误: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     @FXML
