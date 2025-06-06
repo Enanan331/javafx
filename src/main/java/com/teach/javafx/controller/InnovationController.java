@@ -6,6 +6,7 @@ import com.teach.javafx.request.OptionItem;
 import com.teach.javafx.request.HttpRequestUtil;
 import com.teach.javafx.controller.base.MessageDialog;
 import com.teach.javafx.controller.base.ToolController;
+import com.teach.javafx.util.CommonMethod;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -262,17 +263,161 @@ public class InnovationController extends ToolController {
             form.put("teacherId", 0);
         }
 
-        DataRequest req = new DataRequest();
-        req.add("form", form);
-        DataResponse res = HttpRequestUtil.request("/api/innovation/innovationSave", req);
-        if (res != null && res.getCode() == 0) {
-            MessageDialog.showDialog("提交成功");
-            onQueryButtonClick();
-        } else if (res != null) {
-            MessageDialog.showDialog(res.getMsg());
+        try {
+            if (innovationId == null) {
+                // 新增操作
+                System.out.println("执行新增操作");
+                DataRequest req = new DataRequest();
+                req.add("form", form);
+                DataResponse res = HttpRequestUtil.request("/api/innovation/innovationSave", req);
+                
+                if (res != null && res.getCode() == 0) {
+                    MessageDialog.showDialog("提交成功");
+                    onQueryButtonClick();
+                    showVBox.setVisible(false);
+                    showVBox.setManaged(false);
+                } else if (res != null) {
+                    MessageDialog.showDialog(res.getMsg());
+                }
+            } else {
+                // 修改操作 - 先尝试保存新数据，成功后再删除旧数据
+                System.out.println("执行修改操作，innovationId: " + innovationId);
+                
+                // 1. 先尝试保存新数据（但不删除旧数据）
+                DataRequest saveReq = new DataRequest();
+                saveReq.add("form", form);
+                DataResponse saveRes = HttpRequestUtil.request("/api/innovation/innovationSave", saveReq);
+                
+                // 2. 如果保存成功，获取新记录的ID并删除旧记录
+                if (saveRes != null && saveRes.getCode() == 0) {
+                    // 获取新记录的ID
+                    Integer newInnovationId = null;
+                    
+                    // 打印响应数据，帮助调试
+                    System.out.println("保存成功，响应数据类型: " + 
+                        (saveRes.getData() == null ? "null" : saveRes.getData().getClass().getName()));
+                    System.out.println("保存成功，响应数据内容: " + saveRes.getData());
+                    
+                    if (saveRes.getData() instanceof Integer) {
+                        newInnovationId = (Integer) saveRes.getData();
+                        System.out.println("从Integer类型获取ID: " + newInnovationId);
+                    } else if (saveRes.getData() instanceof String) {
+                        try {
+                            newInnovationId = Integer.parseInt((String) saveRes.getData());
+                            System.out.println("从String类型获取ID: " + newInnovationId);
+                        } catch (NumberFormatException e) {
+                            System.out.println("无法将String转换为Integer: " + saveRes.getData());
+                        }
+                    } else if (saveRes.getData() instanceof Map) {
+                        Map<String, Object> data = (Map<String, Object>) saveRes.getData();
+                        System.out.println("Map内容: " + data);
+                        
+                        // 尝试多种可能的键名
+                        String[] possibleKeys = {"innovationId", "id", "innovation_id", "innovationid"};
+                        for (String key : possibleKeys) {
+                            if (data.containsKey(key)) {
+                                Object value = data.get(key);
+                                System.out.println("找到键 '" + key + "' 值为: " + value);
+                                
+                                if (value instanceof Integer) {
+                                    newInnovationId = (Integer) value;
+                                    break;
+                                } else if (value instanceof String) {
+                                    try {
+                                        newInnovationId = Integer.parseInt((String) value);
+                                        break;
+                                    } catch (NumberFormatException e) {
+                                        System.out.println("无法将String值转换为Integer: " + value);
+                                    }
+                                }
+                            }
+                        }
+                    } else if (saveRes.getData() instanceof List) {
+                        List<?> dataList = (List<?>) saveRes.getData();
+                        System.out.println("List内容: " + dataList);
+                        if (!dataList.isEmpty() && dataList.get(0) instanceof Map) {
+                            Map<String, Object> firstItem = (Map<String, Object>) dataList.get(0);
+                            newInnovationId = CommonMethod.getInteger(firstItem, "innovationId");
+                            System.out.println("从List的第一个Map中获取ID: " + newInnovationId);
+                        }
+                    }
+                    
+                    // 如果仍然无法获取ID，尝试通过查询最新记录获取
+                    if (newInnovationId == null) {
+                        System.out.println("无法从响应中获取ID，尝试查询最新记录");
+                        
+                        // 重新加载数据
+                        loadAllInnovationData();
+                        
+                        // 查找最新添加的记录（假设ID是自增的，最大的ID就是最新添加的）
+                        int maxId = -1;
+                        for (Map<String, Object> item : innovationList) {
+                            int itemId = -1;
+                            Object idObj = item.get("innovationId");
+                            if (idObj instanceof Integer) {
+                                itemId = (Integer) idObj;
+                            } else if (idObj instanceof String) {
+                                try {
+                                    itemId = Integer.parseInt((String) idObj);
+                                } catch (NumberFormatException e) {
+                                    continue;
+                                }
+                            }
+                            
+                            if (itemId > maxId) {
+                                maxId = itemId;
+                            }
+                        }
+                        
+                        if (maxId > 0) {
+                            newInnovationId = maxId;
+                            System.out.println("通过查询找到最新记录ID: " + newInnovationId);
+                        }
+                    }
+                    
+                    // 删除旧记录
+                    if (newInnovationId != null) {
+                        DataRequest deleteReq = new DataRequest();
+                        deleteReq.add("innovationId", innovationId);
+                        DataResponse deleteRes = HttpRequestUtil.request("/api/innovation/innovationDelete", deleteReq);
+                        
+                        if (deleteRes == null || deleteRes.getCode() != 0) {
+                            System.out.println("删除原记录失败，但新记录已创建，ID: " + newInnovationId);
+                            MessageDialog.showDialog("警告：原记录删除失败，但修改已保存为新记录");
+                        } else {
+                            System.out.println("修改成功：创建了新记录(ID: " + newInnovationId + ")并删除了旧记录(ID: " + innovationId + ")");
+                            MessageDialog.showDialog("修改成功");
+                        }
+                    } else {
+                        System.out.println("无法获取新记录ID，但新记录已创建");
+                        MessageDialog.showDialog("警告：无法获取新记录ID，但修改已保存");
+                    }
+                    
+                    // 重新加载数据
+                    onQueryButtonClick();
+                    
+                    // 隐藏编辑面板并清空表单
+                    showVBox.setVisible(false);
+                    showVBox.setManaged(false);
+                } else {
+                    // 保存失败，显示错误信息
+                    if (saveRes != null) {
+                        MessageDialog.showDialog("修改失败: " + saveRes.getMsg());
+                    } else {
+                        MessageDialog.showDialog("修改失败: 网络请求失败");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // 捕获并显示任何异常
+            System.out.println("发生异常: " + e.getMessage());
+            e.printStackTrace();
+            MessageDialog.showDialog("发生错误: " + e.getMessage());
+            
+            // 隐藏编辑面板
+            showVBox.setVisible(false);
+            showVBox.setManaged(false);
         }
-        showVBox.setVisible(false);
-        showVBox.setManaged(false);
     }
 
     public void clearPanel() {
