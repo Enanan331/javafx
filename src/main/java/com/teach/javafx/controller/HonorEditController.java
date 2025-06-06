@@ -1,5 +1,7 @@
 package com.teach.javafx.controller;
 
+import com.teach.javafx.request.DataRequest;
+import com.teach.javafx.request.HttpRequestUtil;
 import com.teach.javafx.request.OptionItem;
 import com.teach.javafx.util.CommonMethod;
 import javafx.fxml.FXML;
@@ -37,8 +39,13 @@ public class HonorEditController {
     }
 
     public void init() {
-        studentList = honorController.getStudentList();
-        studentComboBox.getItems().addAll(studentList);
+        DataRequest req = new DataRequest(); OptionItem item=new OptionItem(null,"0","请选择");
+        studentComboBox.setOnMouseClicked(e->{
+            studentList= HttpRequestUtil.requestOptionItemList("/api/honor/getStudentItemOptionList",req);
+            studentComboBox.getItems().clear();
+            studentComboBox.getItems().add(item);
+            studentComboBox.getItems().addAll(studentList);
+        });
     }
 
     @FXML

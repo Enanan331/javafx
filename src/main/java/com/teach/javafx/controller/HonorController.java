@@ -136,6 +136,17 @@ public class HonorController {
         studentComboBox.getItems().add(item);
         studentComboBox.getItems().addAll(studentList);
         dataTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        studentComboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null && !newValue.getValue().equals("0")) { // 排除"请选择"选项
+                  onQueryButtonClick();
+            }
+        });
+        studentComboBox.setOnMouseClicked(e->{
+            studentList=HttpRequestUtil.requestOptionItemList("/api/honor/getStudentItemOptionList",req);
+            studentComboBox.getItems().clear();
+            studentComboBox.getItems().add(item);
+            studentComboBox.getItems().addAll(studentList);
+        });
         onQueryButtonClick();
     }
     public void doClose(String cmd,Map<String,Object> data){

@@ -1,5 +1,7 @@
 package com.teach.javafx.controller;
 
+import com.teach.javafx.request.DataRequest;
+import com.teach.javafx.request.HttpRequestUtil;
 import com.teach.javafx.request.OptionItem;
 import com.teach.javafx.util.CommonMethod;
 import javafx.fxml.FXML;
@@ -56,10 +58,19 @@ public class ScoreEditController {
         this.scoreTableController = scoreTableController;
     }
     public void init(){
-        studentList =scoreTableController.getStudentList();
-        courseList = scoreTableController.getCourseList();
-        studentComboBox.getItems().addAll(studentList );
-        courseComboBox.getItems().addAll(courseList);
+        DataRequest req = new DataRequest(); OptionItem item=new OptionItem(null,"0","请选择");
+        studentComboBox.setOnMouseClicked(e->{
+            studentList= HttpRequestUtil.requestOptionItemList("/api/honor/getStudentItemOptionList",req);
+            studentComboBox.getItems().clear();
+            studentComboBox.getItems().add(item);
+            studentComboBox.getItems().addAll(studentList);
+        });
+        courseComboBox.setOnMouseClicked(e->{
+            courseList=HttpRequestUtil.requestOptionItemList("/api/score/getCourseItemOptionList",req);
+            courseComboBox.getItems().clear();
+            courseComboBox.getItems().add(item);
+            courseComboBox.getItems().addAll(courseList);
+        });
     }
     public void showDialog(Map data){
         if(data == null) {
