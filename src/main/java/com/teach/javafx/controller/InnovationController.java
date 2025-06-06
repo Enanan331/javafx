@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javafx.application.Platform;
 
 public class InnovationController extends ToolController {
     @FXML
@@ -146,7 +147,24 @@ public class InnovationController extends ToolController {
             }
         });
         
-        onQueryButtonClick();
+        // 添加场景变化监听器
+        dataTableView.sceneProperty().addListener((observable, oldScene, newScene) -> {
+            if (newScene != null) {
+                // 当场景变为可见时刷新数据
+                newScene.windowProperty().addListener((prop, oldWindow, newWindow) -> {
+                    if (newWindow != null) {
+                        Platform.runLater(this::loadAllInnovationData);
+                    }
+                });
+            }
+        });
+        
+        // 初始化时加载所有数据
+        loadAllInnovationData();
+        
+        // 初始时隐藏编辑面板
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
     
     private void loadTeacherOptions() {
@@ -182,6 +200,27 @@ public class InnovationController extends ToolController {
         }
     }
 
+    /**
+     * 加载所有创新成果数据
+     */
+    public void loadAllInnovationData() {
+        // 清空搜索框
+        numNameTextField.setText("");
+        
+        // 发送请求获取所有创新成果数据
+        DataRequest req = new DataRequest();
+        req.add("numName", ""); // 空字符串表示获取所有数据
+        DataResponse res = HttpRequestUtil.request("/api/innovation/getInnovationList", req);
+        if (res != null && res.getCode() == 0) {
+            innovationList = (List<Map<String, Object>>) res.getData();
+            
+            // 直接更新表格数据
+            observableList.clear();
+            observableList.addAll(innovationList);
+            dataTableView.setItems(observableList);
+        }
+    }
+
     @FXML
     protected void onQueryButtonClick() {
         DataRequest req = new DataRequest();
@@ -192,6 +231,7 @@ public class InnovationController extends ToolController {
             innovationList = (List<Map<String, Object>>) res.getData();
             observableList.clear();
             observableList.addAll(innovationList);
+            dataTableView.setItems(observableList);
         }
     }
 
@@ -361,5 +401,16 @@ public class InnovationController extends ToolController {
                 System.out.println("未选中教师");
             }
         });
+    }
+
+    /**
+     * 设置表格数据
+     */
+    private void setTableViewData() {
+        observableList.clear();
+        for (int j = 0; j < innovationList.size(); j++) {
+            observableList.addAll(FXCollections.observableArrayList(innovationList.get(j)));
+        }
+        dataTableView.setItems(observableList);
     }
 }
