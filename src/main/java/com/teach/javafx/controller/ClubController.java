@@ -242,40 +242,6 @@ public class ClubController extends ToolController {
         }
     }
 
-    private void loadClubMembers(Integer clubId) {
-        DataRequest req = new DataRequest();
-        req.add("clubId", clubId);
-        DataResponse res = HttpRequestUtil.request("/api/club/getClubMemberList", req);
-        if (res != null && res.getCode() == 0) {
-            List<Map> currentMembers = (List<Map>) res.getData();
-
-            // 仅加载当前社团成员到社长下拉框
-            presidentComboBox.getItems().setAll(FXCollections.observableArrayList(currentMembers));
-
-            // 保留当前选择值
-            Map selected = presidentComboBox.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                for (Map item : presidentComboBox.getItems()) {
-                    if (CommonMethod.getString(selected, "personId")
-                            .equals(CommonMethod.getString(item, "personId"))) {
-                        presidentComboBox.getSelectionModel().select(item);
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    private void loadTeacherData() {
-        DataResponse res = HttpRequestUtil.request("/api/teacher/getTeacherList", new DataRequest());
-        if (res != null && res.getCode() == 0) {
-            teacherList = (ArrayList<Map>) res.getData();
-            advisorComboBox.getItems().clear();
-            advisorComboBox.getItems().addAll(FXCollections.observableArrayList(teacherList));
-        }
-    }
-
-
 
     protected void changeClubInfo() {
         Map<String, Object> form = dataTableView.getSelectionModel().getSelectedItem();
