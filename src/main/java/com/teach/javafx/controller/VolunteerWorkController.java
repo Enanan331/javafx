@@ -193,9 +193,9 @@ public class VolunteerWorkController extends ToolController {
                 MessageDialog.showDialog(res.getMsg());
             }
         }
+        refreshTableViewData();
         showVBox.setVisible(false);
         showVBox.setManaged(false);
-        refreshTableViewData();
     }
 
     private void calculateServiceHours() {

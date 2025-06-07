@@ -246,10 +246,13 @@ public class CourseController {
         TableView.TableViewSelectionModel<Map<String,Object>> tsm = dataTableView.getSelectionModel();
         ObservableList<Integer> list = tsm.getSelectedIndices();
         DataRequest req =new DataRequest();
-        courseName = HttpRequestUtil.requestOptionItemList("/api/course/getCourseItemOptionList",req);
-        OptionItem item=new OptionItem(null,"0","请选择");
-        courseComboBox.getItems().add(item);
-        courseComboBox.getItems().addAll(courseName);
+        courseComboBox.setOnMouseClicked(e-> {
+                    courseComboBox.getItems().clear();
+                    courseName = HttpRequestUtil.requestOptionItemList("/api/course/getCourseItemOptionList", req);
+                    OptionItem item = new OptionItem(null, "0", "请选择");
+                    courseComboBox.getItems().add(item);
+                    courseComboBox.getItems().addAll(courseName);
+                });
         onQueryButtonClick();
         showVBox.setVisible(false);
         showVBox.setManaged(false);

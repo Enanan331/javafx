@@ -14,6 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.nio.file.Path;
 import java.util.Map;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 
 /**
  * HttpRequestUtil 后台请求实例程序，主要实践向后台发送请求的方法
@@ -210,28 +214,46 @@ public class HttpRequestUtil {
 
     /**
      * DataResponse uploadFile(String fileName,String remoteFile) 上传数据文件
-     * @param fileName  本地文件名
+     * @param uri 上传接口URI
+     * @param fileName 本地文件名
      * @param remoteFile 远程文件路径
      * @return 上传操作信息
      */
-    public static DataResponse uploadFile(String uri,String fileName,String remoteFile)  {
+    public static DataResponse uploadFile(String uri, String fileName, String remoteFile) {
         try {
             Path file = Path.of(fileName);
+            if (!Files.exists(file)) {
+                return new DataResponse(1, null, "文件不存在: " + fileName);
+            }
+            
+            if (!Files.isReadable(file)) {
+                return new DataResponse(1, null, "文件不可读: " + fileName);
+            }
+            
+            // 简化URL构建，避免编码问题
+            String url = serverUrl + uri + "?uploader=HttpTestApp&remoteFile=" + remoteFile + "&fileName=" + file.getFileName();
+            
             HttpClient client = HttpClient.newBuilder().build();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(serverUrl+uri+"?uploader=HttpTestApp&remoteFile="+remoteFile + "&fileName="
-                            + file.getFileName()))
+                    .uri(URI.create(url))
                     .POST(HttpRequest.BodyPublishers.ofFile(file))
                     .headers("Authorization", "Bearer " + AppStore.getJwt().getToken())
                     .build();
-            HttpResponse<String>  response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if(response.statusCode() == 200) {
+            
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            
+            System.out.println("上传照片响应状态码: " + response.statusCode());
+            System.out.println("上传照片响应内容: " + response.body());
+            
+            if (response.statusCode() == 200) {
                 return gson.fromJson(response.body(), DataResponse.class);
+            } else {
+                return new DataResponse(1, null, "服务器返回错误状态码: " + response.statusCode());
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
+            return new DataResponse(1, null, "上传过程中发生错误: " + e.getMessage());
         }
-        return null;
     }
 
     /**

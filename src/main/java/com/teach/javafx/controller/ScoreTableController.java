@@ -138,6 +138,18 @@ public class ScoreTableController {
         courseComboBox.getItems().addAll(item);
         courseComboBox.getItems().addAll(courseList);
         dataTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        studentComboBox.setOnMouseClicked(e->{
+            studentList=HttpRequestUtil.requestOptionItemList("/api/score/getStudentItemOptionList",req);
+            studentComboBox.getItems().clear();
+            studentComboBox.getItems().add(item);
+            studentComboBox.getItems().addAll(studentList);
+        });
+        courseComboBox.setOnMouseClicked(e->{
+            courseList=HttpRequestUtil.requestOptionItemList("/api/score/getCourseItemOptionList",req);
+            courseComboBox.getItems().clear();
+            courseComboBox.getItems().add(item);
+            courseComboBox.getItems().addAll(courseList);
+        });
         onQueryButtonClick();
     }
 

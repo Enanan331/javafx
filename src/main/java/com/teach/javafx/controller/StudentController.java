@@ -123,6 +123,7 @@ public class StudentController extends ToolController {
 
     @FXML
     public void initialize() {
+        // 确保每次初始化时创建新的ImageView实例
         photoImageView = new ImageView();
         photoImageView.setFitHeight(100);
         photoImageView.setFitWidth(100);
@@ -173,6 +174,8 @@ public class StudentController extends ToolController {
         emailField.setText("");
         phoneField.setText("");
         addressField.setText("");
+        // 清除照片显示
+        photoImageView.setImage(null);
     }
 
     protected void changeStudentInfo() {
@@ -201,6 +204,10 @@ public class StudentController extends ToolController {
         emailField.setText(CommonMethod.getString(form, "email"));
         phoneField.setText(CommonMethod.getString(form, "phone"));
         addressField.setText(CommonMethod.getString(form, "address"));
+        
+        // 清除之前的照片
+        photoImageView.setImage(null);
+        // 然后显示新的照片
         displayPhoto();
     }
 
@@ -300,77 +307,25 @@ public class StudentController extends ToolController {
         req.add("personId", personId);
         req.add("form", form);
         DataResponse res = HttpRequestUtil.request("/api/student/studentEditSave", req);
-        if (res.getCode() == 0) {
-            personId = CommonMethod.getIntegerFromObject(res.getData());
-            MessageDialog.showDialog("提交成功！");
-            onQueryButtonClick();
-        } else {
-            MessageDialog.showDialog(res.getMsg());
+        if (res!= null) {
+            if (res.getCode() == 0) {
+                personId = CommonMethod.getIntegerFromObject(res.getData());
+                MessageDialog.showDialog("提交成功！");
+                onQueryButtonClick();
+            }
+            else {
+                MessageDialog.showDialog(res.getMsg());
+            }
         }
+        else {
+            MessageDialog.showDialog("提交失败！后端无响应");
+        }
+
         showVBox.setVisible(false);
         showVBox.setManaged(false);
         dataTableView.getSelectionModel().clearSelection();
     }
 
-    /**
-     * doNew() doSave() doDelete() 重写 ToolController 中的方法， 实现选择 新建，保存，删除 对学生的增，删，改操作
-     */
-    public void doNew() {
-        clearPanel();
-    }
-
-    public void doSave() {
-        onSaveButtonClick();
-    }
-
-    public void doDelete() {
-        onDeleteButtonClick();
-    }
-
-    /**
-     * 导出学生信息表的示例 重写ToolController 中的doExport 这里给出了一个导出学生基本信息到Excl表的示例， 后台生成Excl文件数据，传回前台，前台将文件保存到本地
-     */
-    public void doExport() {
-        String numName = numNameTextField.getText();
-        DataRequest req = new DataRequest();
-        req.add("numName", numName);
-        byte[] bytes = HttpRequestUtil.requestByteData("/api/student/getStudentListExcl", req);
-        if (bytes != null) {
-            try {
-                FileChooser fileDialog = new FileChooser();
-                fileDialog.setTitle("前选择保存的文件");
-                fileDialog.setInitialDirectory(new File("C:/"));
-                fileDialog.getExtensionFilters().addAll(
-                        new FileChooser.ExtensionFilter("XLSX 文件", "*.xlsx"));
-                File file = fileDialog.showSaveDialog(null);
-                if (file != null) {
-                    FileOutputStream out = new FileOutputStream(file);
-                    out.write(bytes);
-                    out.close();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-    }
-
-    @FXML
-    protected void onImportButtonClick() {
-        FileChooser fileDialog = new FileChooser();
-        fileDialog.setTitle("前选择学生数据表");
-        fileDialog.setInitialDirectory(new File("D:/"));
-        fileDialog.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("XLSX 文件", "*.xlsx"));
-        File file = fileDialog.showOpenDialog(null);
-        String paras = "";
-        DataResponse res = HttpRequestUtil.importData("/api/term/importStudentData", file.getPath(), paras);
-        if (res.getCode() == 0) {
-            MessageDialog.showDialog("上传成功！");
-        } else {
-            MessageDialog.showDialog(res.getMsg());
-        }
-    }
 
     @FXML
     protected void onFamilyButtonClick() throws IOException {
@@ -390,6 +345,8 @@ public class StudentController extends ToolController {
     }
 
     public void displayPhoto(){
+        if (personId == null) return;
+        
         DataRequest req = new DataRequest();
         req.add("fileName", "photo/" + personId + ".jpg");  //个人照片显示
         byte[] bytes = HttpRequestUtil.requestByteData("/api/base/getFileByteData", req);
@@ -397,27 +354,56 @@ public class StudentController extends ToolController {
             ByteArrayInputStream in = new ByteArrayInputStream(bytes);
             Image img = new Image(in);
             photoImageView.setImage(img);
+        } else {
+            // 如果没有照片，显示默认图片
+            photoImageView.setImage(null);
         }
-
     }
 
     @FXML
-    public void onPhotoButtonClick(){
+    public void onPhotoButtonClick() {
+        if (personId == null) {
+            MessageDialog.showDialog("请先选择一个学生！");
+            return;
+        }
+        
         FileChooser fileDialog = new FileChooser();
         fileDialog.setTitle("图片上传");
-//        fileDialog.setInitialDirectory(new File("C:/"));
         fileDialog.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("JPG 文件", "*.jpg"));
         File file = fileDialog.showOpenDialog(null);
-        if(file == null)
+        if (file == null)
             return;
-        DataResponse res =HttpRequestUtil.uploadFile("/api/base/uploadPhoto",file.getPath(),"photo/" + personId + ".jpg");
-        if(res.getCode() == 0) {
-            MessageDialog.showDialog("上传成功！");
-            displayPhoto();
+        
+        if (!file.exists() || !file.canRead()) {
+            MessageDialog.showDialog("无法读取选择的文件！");
+            return;
         }
-        else {
-            MessageDialog.showDialog(res.getMsg());
+        
+        if (file.length() > 5 * 1024 * 1024) { // 5MB限制
+            MessageDialog.showDialog("文件太大，请选择小于5MB的图片！");
+            return;
+        }
+        
+        // 添加时间戳防止缓存问题
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String remoteFile = "photo/" + personId + ".jpg?t=" + timestamp;
+        
+        try {
+            DataResponse res = HttpRequestUtil.uploadFile("/api/base/uploadPhoto", file.getPath(), remoteFile);
+            
+            if (res.getCode() == 0) {
+                MessageDialog.showDialog("上传成功！");
+                // 清除之前的照片
+                photoImageView.setImage(null);
+                // 显示新照片
+                displayPhoto();
+            } else {
+                MessageDialog.showDialog("上传失败: " + res.getMsg());
+            }
+        } catch (Exception e) {
+            MessageDialog.showDialog("上传过程中发生错误: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     @FXML
