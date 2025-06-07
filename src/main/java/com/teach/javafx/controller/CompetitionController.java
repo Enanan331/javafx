@@ -61,6 +61,8 @@ public class CompetitionController {
             competitionList = (List<Map<String, Object>>) res.getData();
         }
         setTableViewData();
+        showVBox.setVisible(false);
+        showVBox.setManaged(false);
     }
 
     private void setTableViewData() {
@@ -286,6 +288,9 @@ public class CompetitionController {
         DataResponse res = HttpRequestUtil.request("/api/competition/competitionDelete", req);
         if (res.getCode() == 0) {
             onQueryButtonClick();
+            showVBox.setVisible(false);
+            showVBox.setManaged(false);
+            clearPanel();
         } else {
             MessageDialog.showDialog(res.getMsg());
         }

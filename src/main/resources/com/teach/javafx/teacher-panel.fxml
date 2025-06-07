@@ -37,11 +37,6 @@
                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                             </FlowPane.margin>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onImportButtonClick" text="导入">
-                            <FlowPane.margin>
-                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                            </FlowPane.margin>
-                        </Button>
                     </children>
                 </FlowPane>
                 <Pane prefHeight="-1.0" prefWidth="-1.0" HBox.hgrow="ALWAYS">
@@ -140,11 +135,6 @@
                     </GridPane>
                     <FlowPane alignment="CENTER" columnHalignment="CENTER" prefHeight="36.0">
                         <Button onAction="#onSaveButtonClick" text="保存">
-                            <FlowPane.margin>
-                                <Insets right="5.0" top="5.0" />
-                            </FlowPane.margin>
-                        </Button>
-                        <Button onAction="#onImportFeeButtonClick" text="导入消费记录">
                             <FlowPane.margin>
                                 <Insets right="5.0" top="5.0" />
                             </FlowPane.margin>
