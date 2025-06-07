@@ -206,8 +206,7 @@ public class FeeController {
             feeList = (ArrayList<Map<String,Object>>) res.getData();
             setTableViewData();
         }
-        showVBox.setVisible(false);
-        showVBox.setManaged(false);
+
     }
     @FXML
     void onQ4ButtonClick(ActionEvent event) {
