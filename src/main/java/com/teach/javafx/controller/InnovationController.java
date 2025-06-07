@@ -217,10 +217,22 @@ public class InnovationController extends ToolController {
         if (res != null && res.getCode() == 0) {
             innovationList = (List<Map<String, Object>>) res.getData();
             
-            // 直接更新表格数据
+            // 打印获取到的数据条数，用于调试
+            System.out.println("从服务器获取到 " + (innovationList != null ? innovationList.size() : 0) + " 条创新成果数据");
+            
+            // 直接更新表格数据，不重新创建observableList
             observableList.clear();
-            observableList.addAll(innovationList);
-            dataTableView.setItems(observableList);
+            if (innovationList != null && !innovationList.isEmpty()) {
+                observableList.addAll(innovationList);
+            }
+            
+            // 强制表格刷新
+            dataTableView.refresh();
+            
+            // 调用调试方法
+            debugPrintTableData();
+        } else {
+            System.out.println("加载创新成果数据失败: " + (res != null ? res.getMsg() : "网络请求失败"));
         }
     }
 
@@ -240,6 +252,7 @@ public class InnovationController extends ToolController {
 
     @FXML
     protected void onSaveButtonClick() {
+        // 验证表单
         if (studentNumField.getText().isEmpty()) {
             MessageDialog.showDialog("学号不能为空");
             return;
@@ -265,6 +278,13 @@ public class InnovationController extends ToolController {
             form.put("teacherId", 0);
         }
 
+        // 打印表单数据
+        System.out.println("提交表单数据: 学号=" + studentNumField.getText() + 
+                          ", 姓名=" + studentNameField.getText() + 
+                          ", 成果=" + achievementField.getText() + 
+                          ", 教师=" + (teacherComboBox.getSelectionModel().getSelectedItem() != null ? 
+                                     teacherComboBox.getSelectionModel().getSelectedItem().getLabel() : "无"));
+        
         try {
             if (innovationId == null) {
                 // 新增操作
@@ -273,9 +293,78 @@ public class InnovationController extends ToolController {
                 req.add("form", form);
                 DataResponse res = HttpRequestUtil.request("/api/innovation/innovationSave", req);
                 
+                // 打印响应数据
+                System.out.println("保存响应: code=" + (res != null ? res.getCode() : "null") + 
+                                  ", msg=" + (res != null ? res.getMsg() : "null") + 
+                                  ", data=" + (res != null && res.getData() != null ? res.getData() : "null"));
+                
                 if (res != null && res.getCode() == 0) {
                     MessageDialog.showDialog("提交成功");
-                    onQueryButtonClick();
+                    
+                    // 获取新创建的记录ID
+                    Integer newId = null;
+                    if (res.getData() instanceof Double) {
+                        newId = ((Double) res.getData()).intValue();
+                    } else if (res.getData() instanceof Integer) {
+                        newId = (Integer) res.getData();
+                    } else if (res.getData() instanceof String) {
+                        try {
+                            newId = Integer.parseInt((String) res.getData());
+                        } catch (NumberFormatException e) {
+                            System.out.println("无法将响应数据转换为ID: " + res.getData());
+                        }
+                    }
+                    
+                    if (newId != null) {
+                        // 直接通过ID查询新创建的记录
+                        System.out.println("直接通过ID查询新创建的记录: ID=" + newId);
+                        DataRequest idReq = new DataRequest();
+                        idReq.add("innovationId", newId);
+                        DataResponse idRes = HttpRequestUtil.request("/api/innovation/getInnovationById", idReq);
+                        
+                        if (idRes != null && idRes.getCode() == 0) {
+                            System.out.println("通过ID查询成功: " + idRes.getData());
+                            
+                            // 如果通过ID能查询到，但通过列表查询不到，说明列表查询方法有问题
+                            // 我们可以直接使用这个记录更新表格
+                            Map<String, Object> newRecord = (Map<String, Object>) idRes.getData();
+                            if (newRecord != null) {
+                                // 清空表格并添加新记录
+                                observableList.clear();
+                                observableList.add(newRecord);
+                                dataTableView.refresh();
+                                
+                                System.out.println("已将新记录添加到表格中");
+                            }
+                        } else {
+                            System.out.println("通过ID查询失败: " + (idRes != null ? idRes.getMsg() : "网络请求失败"));
+                        }
+                    }
+                    
+                    // 尝试直接查询最新添加的记录
+                    System.out.println("尝试直接查询最新添加的记录");
+                    DataRequest checkReq = new DataRequest();
+                    checkReq.add("numName", studentNumField.getText()); // 使用学号查询
+                    DataResponse checkRes = HttpRequestUtil.request("/api/innovation/getInnovationList", checkReq);
+                    
+                    if (checkRes != null && checkRes.getCode() == 0) {
+                        List<Map<String, Object>> checkList = (List<Map<String, Object>>) checkRes.getData();
+                        System.out.println("直接查询返回 " + (checkList != null ? checkList.size() : 0) + " 条记录");
+                        
+                        if (checkList != null && !checkList.isEmpty()) {
+                            for (Map<String, Object> item : checkList) {
+                                System.out.println("查询到记录: 学号=" + item.get("studentNum") + 
+                                                  ", 姓名=" + item.get("studentName") + 
+                                                  ", 成果=" + item.get("achievement"));
+                            }
+                            
+                            // 如果能查询到记录，直接使用这些记录更新表格
+                            observableList.clear();
+                            observableList.addAll(checkList);
+                            dataTableView.refresh();
+                        }
+                    }
+                    
                     showVBox.setVisible(false);
                     showVBox.setManaged(false);
                 } else if (res != null) {
@@ -568,5 +657,31 @@ public class InnovationController extends ToolController {
     @FXML
     private void onTeacherComboBoxClicked() {
         loadTeacherOptions();
+    }
+
+    /**
+     * 调试方法：打印当前表格数据
+     */
+    private void debugPrintTableData() {
+        System.out.println("===== 当前表格数据 =====");
+        System.out.println("表格数据条数: " + observableList.size());
+        
+        if (!observableList.isEmpty()) {
+            for (int i = 0; i < Math.min(observableList.size(), 5); i++) {
+                Map<String, Object> item = observableList.get(i);
+                System.out.println("数据项 #" + i + ": " + 
+                    "学号=" + item.get("studentNum") + ", " +
+                    "姓名=" + item.get("studentName") + ", " +
+                    "成果=" + item.get("achievement") + ", " +
+                    "指导教师=" + item.get("advisorName"));
+            }
+            
+            if (observableList.size() > 5) {
+                System.out.println("... 还有 " + (observableList.size() - 5) + " 条数据 ...");
+            }
+        } else {
+            System.out.println("表格数据为空");
+        }
+        System.out.println("======================");
     }
 }

@@ -286,6 +286,7 @@ public class MainFrameController {
                     // 检查资源是否存在
                     if (fxmlLoader.getLocation() == null) {
                         MessageDialog.showDialog("找不到资源文件: " + name + ".fxml");
+                        System.out.println("资源文件不存在: " + name + ".fxml");
                         return;
                     }
                     scene = new Scene(fxmlLoader.load(), 1024, 768);
