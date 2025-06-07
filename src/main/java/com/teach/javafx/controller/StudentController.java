@@ -174,6 +174,8 @@ public class StudentController extends ToolController {
         emailField.setText("");
         phoneField.setText("");
         addressField.setText("");
+        // 清除照片显示
+        photoImageView.setImage(null);
     }
 
     protected void changeStudentInfo() {
