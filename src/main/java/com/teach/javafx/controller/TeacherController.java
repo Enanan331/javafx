@@ -170,6 +170,8 @@ public class TeacherController extends ToolController {
         emailField.setText("");
         phoneField.setText("");
         addressField.setText("");
+        // 清除照片显示
+        photoImageView.setImage(null);
     }
 
     protected void changeTeacherInfo() {
@@ -316,9 +318,19 @@ public class TeacherController extends ToolController {
 
 
     public void displayPhoto(){
+        if (personId == null) {
+            // 如果没有选择教师，清除照片
+            photoImageView.setImage(null);
+            return;
+        }
+        
         DataRequest req = new DataRequest();
         req.add("fileName", "photo/" + personId + ".jpg");  //个人照片显示
         byte[] bytes = HttpRequestUtil.requestByteData("/api/base/getFileByteData", req);
+        
+        // 先清除之前的照片
+        photoImageView.setImage(null);
+        
         if (bytes != null) {
             ByteArrayInputStream in = new ByteArrayInputStream(bytes);
             Image img = new Image(in);
@@ -328,6 +340,11 @@ public class TeacherController extends ToolController {
 
     @FXML
     public void onPhotoButtonClick(){
+        if (personId == null) {
+            MessageDialog.showDialog("请先选择一个教师！");
+            return;
+        }
+        
         FileChooser fileDialog = new FileChooser();
         fileDialog.setTitle("图片上传");
         fileDialog.getExtensionFilters().addAll(
@@ -335,10 +352,11 @@ public class TeacherController extends ToolController {
         File file = fileDialog.showOpenDialog(null);
         if(file == null)
             return;
-        DataResponse res =HttpRequestUtil.uploadFile("/api/base/uploadPhoto",file.getPath(),"photo/" + personId + ".jpg");
+        
+        DataResponse res = HttpRequestUtil.uploadFile("/api/base/uploadPhoto", file.getPath(), "photo/" + personId + ".jpg");
         if(res.getCode() == 0) {
             MessageDialog.showDialog("上传成功！");
-            displayPhoto();
+            displayPhoto();  // 上传成功后立即显示新照片
         }
         else {
             MessageDialog.showDialog(res.getMsg());
